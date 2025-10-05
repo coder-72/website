@@ -6,14 +6,7 @@ import base64
 DB_PATH = "database.db"
 
 
-def placeholder():
-    with open('static/assets/placeholder.png', 'rb') as file:
-        return file.read()
-
-
-placeholder = placeholder()
-
-def add_post(title, description, t:int = 1, priority:int = 0,  image = placeholder)->None:
+def add_item(title:str, description:str,price:float ,related:str, priority:int,  image, t:str = "other")->None:
     now = datetime.now(timezone.utc)
     unix_timestamp = int(now.timestamp())
 
@@ -23,90 +16,70 @@ def add_post(title, description, t:int = 1, priority:int = 0,  image = placehold
 
 
 
+
     # insert post info into sql table (posts)
-    cursor.execute("INSERT INTO posts (title,description, image, type, date, priority) VALUES (?, ?, ?, ?, ?, ?);",
-                   (title, description, image, t, unix_timestamp, priority))
+    cursor.execute("INSERT INTO items (title, description, price, related, priority, image, date, type) VALUES (?, ?, ?, ?, ?, ?, ?,?)",(title, description, price, related, priority, image, unix_timestamp, t.lower()))
 
     # commit data before closing connection
     conn.commit()
     cursor.close()
     conn.close()
 
-def get_posts():
+def get_items(t):
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
 
     # execute sql and get results
-    cursor.execute("SELECT title, description, image, type FROM posts ORDER BY Priority DESC, date DESC;")
-    posts = cursor.fetchall()
+    cursor.execute("SELECT * FROM items WHERE type = ? ORDER BY priority DESC, date DESC;", [t.lower()])
+    items = cursor.fetchall()
 
     # close cursor and connection
     cursor.close()
     conn.close()
 
     html = ""
-    for post in posts:
-        title = post["title"]
-        description = post["description"]
-        image = base64.b64encode(post["image"]).decode("utf-8")
-        if post['type'] == 1:
-            html += f"""
-        <div class="row gx-0 mb-4 mb-lg-5 align-items-center">
-                <div class="col-xl-8 col-lg-7"><img class="img-fluid mb-3 mb-lg-0" src="data:image/jpeg;base64,{image}" alt="..." /></div>
-                <div class="col-xl-4 col-lg-5">
-                    <div class="featured-text text-center text-lg-left">
-                            <h4>{title}</h4>
-                            <p class="text-black-50 mb-0">{description}</p>
+    for item in items:
+        id = item["id"]
+        title = item["title"]
+        description = item["description"]
+        price = item["price"]
+        image = item["image"]
+        date = datetime.fromtimestamp(int(item["date"])).strftime("%m/%d/%Y")
+        #TODO: fix image
+        html += f"""
+        <div class="col mb-5">
+                        <div class="card h-100">
+                            <!-- Product image-->
+                            <img class="card-img-top" src="{{ url_for(('static'), filename='assets/download.png')}}" alt="..." />
+                            <!-- Product details-->
+                            <div class="card-body p-4">
+                                <div class="text-center">
+                                    <!-- Product name-->
+                                    <h5 class="fw-bolder">{title}</h5>
+                                    <!-- Product reviews-->
+                                    <div class="d-flex justify-content-center small text-warning mb-2">
+                                        <div class="bi-star-fill"></div>
+                                        <div class="bi-star-fill"></div>
+                                        <div class="bi-star-fill"></div>
+                                        <div class="bi-star-fill"></div>
+                                        <div class="bi-star-fill"></div>
+                                    </div>
+                                    <!-- Product price-->
+                                    £{price:.2f}
+                                </div>
+                            </div>
+                            <!-- Product actions-->
+                            <div class="card-footer p-4 pt-0 border-top-0 bg-transparent">
+                                <div class="text-center"><a class="btn btn-outline-dark mt-auto" href="/item/{id}">View item</a></div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-        </div>
         """
-        elif post['type'] == 2:
-            html += f"""
-                <div class="row gx-0 mb-4 mb-lg-5 align-items-center">
-                    <div class="col-xl-4 col-lg-5">
-                        <div class="featured-text text-center text-lg-left">
-                            <h4>{title}</h4>
-                            <p class="text-black-50 mb-0">{description}</p>
-                        </div>
-                    </div>
-                    <div class="col-xl-8 col-lg-7"><img class="img-fluid mb-3 mb-lg-0" src="data:image/jpeg;base64,{image}" alt="..." /></div>
-                </div>
-                """
-        elif post['type'] == 3:
-            html += f"""
-             <div class="row gx-0 mb-5 mb-lg-0 justify-content-center">
-                    <div class="col-lg-6"><img class="img-fluid" src="data:image/jpeg;base64,{image}" alt="..." /></div>
-                    <div class="col-lg-6">
-                        <div class="bg-black text-center h-100 project">
-                            <div class="d-flex h-100">
-                                <div class="project-text w-100 my-auto text-center text-lg-left">
-                                    <h4 class="text-white">{title}</h4>
-                                    <p class="mb-0 text-white-50">{description}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            """
-        elif post['type'] == 4:
-            html += f"""
-            <div class="row gx-0 justify-content-center">
-                    <div class="col-lg-6"><img class="img-fluid" src="data:image/jpeg;base64,{image}" alt="..." /></div>
-                    <div class="col-lg-6 order-lg-first">
-                        <div class="bg-black text-center h-100 project">
-                            <div class="d-flex h-100">
-                                <div class="project-text w-100 my-auto text-center text-lg-right">
-                                    <h4 class="text-white">{title}</h4>
-                                    <p class="mb-0 text-white-50">{description}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            """
-        else:
-            pass
     return html
 
+def get_bits():
+    with open("static/assets/download.png", "rb") as f:
+        return f.read()
+
+#add_item("test title", "test description desctription would go here", 10.001, "1,2,3,4", 1, get_bits(), )

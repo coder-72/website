@@ -17,6 +17,10 @@ def shop(name:str):
     items = database.get_items(name)
     return flask.render_template("shop.html", items=items)
 
+@app.route('/shop')
+def shop(name:str):
+    items = database.get_items()
+    return flask.render_template("shop.html", items=items)
 
 @app.errorhandler(Exception)
 def error_handler(error):

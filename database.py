@@ -20,7 +20,7 @@ def add_item(title:str, description:str,price:float ,related:str, priority:int, 
 
 
     # insert post info into sql table (posts)
-    cursor.execute("INSERT INTO items (title, description, price, related, priority, image, date, type) VALUES (?, ?, ?, ?, ?, ?, ?,?)",(title, description, price, related, priority, image, unix_timestamp, t.lower()))
+    cursor.execute("INSERT INTO items (title, description, price, related, priority, image, date, type) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",(title, description, price, related, priority, image, unix_timestamp, t.lower()))
 
     # commit data before closing connection
     conn.commit()
@@ -31,7 +31,7 @@ def get_items(t):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
-    cursor.execute("SELECT * FROM items WHERE type = ? ORDER BY priority DESC, date DESC;", [t.lower()])
+    cursor.execute("SELECT * FROM items WHERE type = %s ORDER BY priority DESC, date DESC;", [t.lower()])
     items = cursor.fetchall()
 
     # close cursor and connection
@@ -58,7 +58,7 @@ def item(id:int):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
-    cursor.execute("SELECT * FROM items Where id = ?;", [id])
+    cursor.execute("SELECT * FROM items Where id = %s;", [id])
     info =  cursor.fetchone()
 
     # close cursor and connection
@@ -159,7 +159,7 @@ def get_new(lim=5):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
-    cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT ?", [lim])
+    cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT %s", [lim])
     items = cursor.fetchall()
 
     # close cursor and connection
@@ -167,4 +167,4 @@ def get_new(lim=5):
 
     return items
 
-add_item("test title", "test description description would go here", 10.001, "1,2,3,4", 1, get_bits(), )
+#add_item("test title", "test description description would go here", 10.001, "1,2,3,4", 1, get_bits(), )

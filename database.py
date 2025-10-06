@@ -1,18 +1,20 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime, timezone
 import base64
 
 
 DB_PATH = "database.db"
+conn = psycopg2.connect(
+    "postgresql://neondb_owner:npg_B3mrRSV1PFgk@ep-cool-waterfall-abaavfkt-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require")
 
 
 def add_item(title:str, description:str,price:float ,related:str, priority:int,  image, t:str = "other")->None:
     now = datetime.now(timezone.utc)
     unix_timestamp = int(now.timestamp())
 
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
 
 
 
@@ -23,12 +25,10 @@ def add_item(title:str, description:str,price:float ,related:str, priority:int, 
     # commit data before closing connection
     conn.commit()
     cursor.close()
-    conn.close()
 
 def get_items(t):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
     cursor.execute("SELECT * FROM items WHERE type = ? ORDER BY priority DESC, date DESC;", [t.lower()])
@@ -36,14 +36,13 @@ def get_items(t):
 
     # close cursor and connection
     cursor.close()
-    conn.close()
+
 
     return items
 
 def get_all():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
     cursor.execute("SELECT * FROM items ORDER BY priority DESC, date DESC;")
@@ -51,14 +50,12 @@ def get_all():
 
     # close cursor and connection
     cursor.close()
-    conn.close()
 
     return items
 
 def item(id:int):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
     cursor.execute("SELECT * FROM items Where id = ?;", [id])
@@ -66,7 +63,6 @@ def item(id:int):
 
     # close cursor and connection
     cursor.close()
-    conn.close()
     return info
 
 def item_to_card(i):
@@ -157,12 +153,10 @@ def items_to_cards(items):
     for i in items:
         html += item_to_card(i)
     return html
-#add_item("test title", "test description desctription would go here", 10.001, "1,2,3,4", 1, get_bits(), )
 
 def get_new(lim=5):
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
     cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT ?", [lim])
@@ -170,6 +164,7 @@ def get_new(lim=5):
 
     # close cursor and connection
     cursor.close()
-    conn.close()
 
     return items
+
+add_item("test title", "test description description would go here", 10.001, "1,2,3,4", 1, get_bits(), )

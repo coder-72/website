@@ -71,13 +71,13 @@ def item_to_card(i):
     description = i["description"]
     price = i["price"]
     related = i["related"]
-    image = i["image"]
+    image = base64.b64encode(i["image"]).decode("utf-8")
     date = datetime.fromtimestamp(int(i["date"])).strftime("%m/%d/%Y")
     html = f"""
                 <div class="col mb-5">
                                 <div class="card h-100">
                                     <!-- Product image-->
-                                    <img class="card-img-top" src="{{ url_for(('static'), filename='assets/download.png')}}" alt="..." />
+                                    <img class="card-img-top" src="data:application/octet-stream;base64,{ image }" alt="..." />
                                     <!-- Product details-->
                                     <div class="card-body p-4">
                                         <div class="text-center">
@@ -103,18 +103,21 @@ def item_to_page(i):
     description = i["description"]
     price = i["price"]
     related = i["related"]
-    image = i["image"]
+    image = base64.b64encode(i["image"]).decode("utf-8")
     date = datetime.fromtimestamp(int(i["date"])).strftime("%m/%d/%Y")
     r_html = ""
     for r in related:
-        r_html += item_to_card(item(id))
+        if r != "" and isinstance(r, int):
+            r_html += f"""
+        r_html += item_to_card(item(int(id)))
+        """
 
 
     html = f"""
         <section class="py-5">
             <div class="container px-4 px-lg-5 my-5">
                 <div class="row gx-4 gx-lg-5 align-items-center">
-                    <div class="col-md-6"><img class="card-img-top mb-5 mb-md-0" src="https://dummyimage.com/600x700/dee2e6/6c757d.jpg" alt="..." /></div>
+                    <div class="col-md-6"><img class="card-img-top mb-5 mb-md-0" src="data:application/octet-stream;base64,{ image }" alt="..." /></div>
                     <div class="col-md-6">
                         <div class="small mb-1">ID: {id}</div>
                         <h1 class="display-5 fw-bolder">{title}</h1>
@@ -159,12 +162,21 @@ def get_new(lim=5):
     cursor = conn.cursor(cursor_factory=RealDictCursor)
 
     # execute sql and get results
-    cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT %s", [lim])
+    cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT %s;", (lim,))
     items = cursor.fetchall()
 
     # close cursor and connection
     cursor.close()
 
     return items
+
+def delete(id):
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    # execute sql and get results
+    cursor.execute("DELETE FROM items WHERE id = %s;", (id,))
+
+    # close cursor and connection
+    cursor.close()
 
 #add_item("test title", "test description description would go here", 10.001, "1,2,3,4", 1, get_bits(), )

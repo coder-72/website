@@ -38,17 +38,7 @@ def get_items(t):
     cursor.close()
     conn.close()
 
-    html = ""
-    for item in items:
-        id = item["id"]
-        title = item["title"]
-        description = item["description"]
-        price = item["price"]
-        image = item["image"]
-        date = datetime.fromtimestamp(int(item["date"])).strftime("%m/%d/%Y")
-        #TODO: fix image
-        html += item["title"] + "<br>"
-    return html
+    return items
 
 def get_all():
     conn = sqlite3.connect(DB_PATH)
@@ -63,17 +53,7 @@ def get_all():
     cursor.close()
     conn.close()
 
-    html = ""
-    for item in items:
-        id = item["id"]
-        title = item["title"]
-        description = item["description"]
-        price = item["price"]
-        image = item["image"]
-        date = datetime.fromtimestamp(int(item["date"])).strftime("%m/%d/%Y")
-        # TODO: fix image
-        html += item_to_card(title, description, price, image, id)
-    return html
+    return items
 
 def item(id:int):
     conn = sqlite3.connect(DB_PATH)
@@ -82,14 +62,21 @@ def item(id:int):
 
     # execute sql and get results
     cursor.execute("SELECT * FROM items Where id = ?;", [id])
-     return cursor.fetchone()
+    info =  cursor.fetchone()
 
     # close cursor and connection
     cursor.close()
     conn.close()
+    return info
 
-
-def item_to_card(title:str, description:str, price:float, image:str, id:int):
+def item_to_card(i):
+    id = i["id"]
+    title = i["title"]
+    description = i["description"]
+    price = i["price"]
+    related = i["related"]
+    image = i["image"]
+    date = datetime.fromtimestamp(int(i["date"])).strftime("%m/%d/%Y")
     html = f"""
                 <div class="col mb-5">
                                 <div class="card h-100">
@@ -101,13 +88,6 @@ def item_to_card(title:str, description:str, price:float, image:str, id:int):
                                             <!-- Product name-->
                                             <h5 class="fw-bolder">{title}</h5>
                                             <!-- Product reviews-->
-                                            <div class="d-flex justify-content-center small text-warning mb-2">
-                                                <div class="bi-star-fill"></div>
-                                                <div class="bi-star-fill"></div>
-                                                <div class="bi-star-fill"></div>
-                                                <div class="bi-star-fill"></div>
-                                                <div class="bi-star-fill"></div>
-                                            </div>
                                             <!-- Product price-->
                                             £{price:.2f}
                                         </div>
@@ -129,13 +109,67 @@ def item_to_page(i):
     related = i["related"]
     image = i["image"]
     date = datetime.fromtimestamp(int(i["date"])).strftime("%m/%d/%Y")
-    type = i["type"]
-    html = f"""
+    r_html = ""
+    for r in related:
+        r_html += item_to_card(item(id))
 
+
+    html = f"""
+        <section class="py-5">
+            <div class="container px-4 px-lg-5 my-5">
+                <div class="row gx-4 gx-lg-5 align-items-center">
+                    <div class="col-md-6"><img class="card-img-top mb-5 mb-md-0" src="https://dummyimage.com/600x700/dee2e6/6c757d.jpg" alt="..." /></div>
+                    <div class="col-md-6">
+                        <div class="small mb-1">ID: {id}</div>
+                        <h1 class="display-5 fw-bolder">{title}</h1>
+                        <div class="fs-5 mb-5">
+                            <span>£{price:.2f}</span>
+                        </div>
+                        <p class="lead">{description}</p>
+                        <div class="d-flex">
+                            <input class="form-control text-center me-3" id="inputQuantity" type="num" value="1" style="max-width: 3rem" />
+                            <button class="btn btn-outline-dark flex-shrink-0" type="button">
+                                <i class="bi-cart-fill me-1"></i>
+                                Add to cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="py-5 bg-light">
+            <div class="container px-4 px-lg-5 mt-5">
+                <h2 class="fw-bolder mb-4">Related products</h2>
+                <div class="row gx-4 gx-lg-5 row-cols-2 row-cols-md-3 row-cols-xl-4 justify-content-center">
+                    {r_html}
+                </div>
+            </div>
+        </section>
 """
+    return html
 
 def get_bits():
     with open("static/assets/download.png", "rb") as f:
         return f.read()
 
+def items_to_cards(items):
+    html = ""
+    for i in items:
+        html += item_to_card(i)
+    return html
 #add_item("test title", "test description desctription would go here", 10.001, "1,2,3,4", 1, get_bits(), )
+
+def get_new(lim=5):
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # execute sql and get results
+    cursor.execute("SELECT * FROM items ORDER BY date DESC LIMIT ?", [lim])
+    items = cursor.fetchall()
+
+    # close cursor and connection
+    cursor.close()
+    conn.close()
+
+    return items
